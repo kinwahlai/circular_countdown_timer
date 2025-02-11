@@ -406,8 +406,10 @@ class CountDownController {
   }
 
   /// This Method resets the Countdown Timer
-  void reset() {
+  void reset({int? duration}) {
     if (_state != null && _state?._controller != null) {
+      _state?._controller!.duration = Duration(
+          seconds: duration ?? _state!._controller!.duration!.inSeconds);
       _state?._controller?.reset();
       isStarted.value = _state?.widget.autoStart ?? false;
       isRestarted.value = false;
