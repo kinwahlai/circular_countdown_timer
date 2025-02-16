@@ -122,15 +122,15 @@ class CircularCountDownTimer extends StatefulWidget {
 
 class CircularCountDownTimerState extends State<CircularCountDownTimer>
     with TickerProviderStateMixin {
-  AnimationController? _controller;
+  AnimationController? _animationController;
   Animation<double>? _countDownAnimation;
-  CountDownController? countDownController;
+  CountDownController? _countDownController;
 
   String get time {
     String timeStamp = "";
     if (widget.isReverse &&
         !widget.autoStart &&
-        !countDownController!.isStarted.value) {
+        !_countDownController!.isStarted.value) {
       if (widget.timeFormatterFunction != null) {
         timeStamp = Function.apply(widget.timeFormatterFunction!,
             [_getTime, Duration(seconds: widget.duration)]).toString();
@@ -138,7 +138,7 @@ class CircularCountDownTimerState extends State<CircularCountDownTimer>
         timeStamp = _getTime(Duration(seconds: widget.duration));
       }
     } else {
-      Duration? duration = _controller!.duration! * _controller!.value;
+      Duration? duration = _animationController!.duration! * _animationController!.value;
       if (widget.timeFormatterFunction != null) {
         timeStamp =
             Function.apply(widget.timeFormatterFunction!, [_getTime, duration])
@@ -155,9 +155,9 @@ class CircularCountDownTimerState extends State<CircularCountDownTimer>
   void _setAnimation() {
     if (widget.autoStart) {
       if (widget.isReverse) {
-        _controller!.reverse(from: 1);
+        _animationController!.reverse(from: 1);
       } else {
-        _controller!.forward();
+        _animationController!.forward();
       }
     }
   }
@@ -166,33 +166,33 @@ class CircularCountDownTimerState extends State<CircularCountDownTimer>
     // if ((widget.isReverse && !widget.isReverseAnimation) ||
     //     (widget.isReverse && widget.isReverseAnimation)) {
     //   _countDownAnimation =
-    //       Tween<double>(begin: 1, end: 0).animate(_controller!);
+    //       Tween<double>(begin: 1, end: 0).animate(_animationController!);
     // } else if (!widget.isReverse && widget.isReverseAnimation) {
     //   _countDownAnimation =
-    //       Tween<double>(begin: 0, end: 1).animate(_controller!);
+    //       Tween<double>(begin: 0, end: 1).animate(_animationController!);
     // }
     if ((!widget.isReverse && widget.isReverseAnimation) ||
         (widget.isReverse && !widget.isReverseAnimation)) {
       _countDownAnimation =
-          Tween<double>(begin: 1, end: 0).animate(_controller!);
+          Tween<double>(begin: 1, end: 0).animate(_animationController!);
     }
   }
 
   void _setController() {
-    countDownController?._state = this;
-    countDownController?._isReverse = widget.isReverse;
-    countDownController?._initialDuration = widget.initialDuration;
-    countDownController?._duration = widget.duration;
-    countDownController?.isStarted.value = widget.autoStart;
+    _countDownController?._state = this;
+    _countDownController?._isReverse = widget.isReverse;
+    _countDownController?._initialDuration = widget.initialDuration;
+    _countDownController?._duration = widget.duration;
+    _countDownController?.isStarted.value = widget.autoStart;
 
     if (widget.initialDuration > 0 && widget.autoStart) {
       if (widget.isReverse) {
-        _controller?.value = 1 - (widget.initialDuration / widget.duration);
+        _animationController?.value = 1 - (widget.initialDuration / widget.duration);
       } else {
-        _controller?.value = (widget.initialDuration / widget.duration);
+        _animationController?.value = (widget.initialDuration / widget.duration);
       }
 
-      countDownController?.start();
+      _countDownController?.start();
     }
   }
 
@@ -238,14 +238,14 @@ class CircularCountDownTimerState extends State<CircularCountDownTimer>
 
   @override
   void initState() {
-    countDownController = widget.controller ?? CountDownController();
+    _countDownController = widget.controller ?? CountDownController();
     super.initState();
-    _controller = AnimationController(
+    _animationController = AnimationController(
       vsync: this,
       duration: Duration(seconds: widget.duration),
     );
 
-    _controller!.addStatusListener((status) {
+    _animationController!.addStatusListener((status) {
       switch (status) {
         case AnimationStatus.forward:
           _onStart();
@@ -280,7 +280,7 @@ class CircularCountDownTimerState extends State<CircularCountDownTimer>
       width: widget.width,
       height: widget.height,
       child: AnimatedBuilder(
-          animation: _controller!,
+          animation: _animationController!,
           builder: (context, child) {
             return Align(
               child: AspectRatio(
@@ -290,7 +290,7 @@ class CircularCountDownTimerState extends State<CircularCountDownTimer>
                     Positioned.fill(
                       child: CustomPaint(
                         painter: CustomTimerPainter(
-                            animation: _countDownAnimation ?? _controller,
+                            animation: _countDownAnimation ?? _animationController,
                             fillColor: widget.fillColor,
                             fillGradient: widget.fillGradient,
                             ringColor: widget.ringColor,
@@ -327,8 +327,8 @@ class CircularCountDownTimerState extends State<CircularCountDownTimer>
 
   @override
   void dispose() {
-    _controller!.stop();
-    _controller!.dispose();
+    _animationController!.stop();
+    _animationController!.dispose();
     super.dispose();
   }
 }
@@ -345,14 +345,14 @@ class CountDownController {
 
   /// This Method Starts the Countdown Timer
   void start() {
-    if (_isReverse != null && _state != null && _state?._controller != null) {
+    if (_isReverse != null && _state != null && _state?._animationController != null) {
       if (_isReverse!) {
-        _state?._controller?.reverse(
+        _state?._animationController?.reverse(
             from: _initialDuration == 0
                 ? 1
                 : 1 - (_initialDuration! / _duration!));
       } else {
-        _state?._controller?.forward(
+        _state?._animationController?.forward(
             from: _initialDuration == 0 ? 0 : (_initialDuration! / _duration!));
       }
       isStarted.value = true;
@@ -364,8 +364,8 @@ class CountDownController {
 
   /// This Method Pauses the Countdown Timer
   void pause() {
-    if (_state != null && _state?._controller != null) {
-      _state?._controller?.stop(canceled: false);
+    if (_state != null && _state?._animationController != null) {
+      _state?._animationController?.stop(canceled: false);
       isPaused.value = true;
       isRestarted.value = false;
       isResumed.value = false;
@@ -374,11 +374,11 @@ class CountDownController {
 
   /// This Method Resumes the Countdown Timer
   void resume() {
-    if (_isReverse != null && _state != null && _state?._controller != null) {
+    if (_isReverse != null && _state != null && _state?._animationController != null) {
       if (_isReverse!) {
-        _state?._controller?.reverse(from: _state!._controller!.value);
+        _state?._animationController?.reverse(from: _state!._animationController!.value);
       } else {
-        _state?._controller?.forward(from: _state!._controller!.value);
+        _state?._animationController?.forward(from: _state!._animationController!.value);
       }
       isResumed.value = true;
       isRestarted.value = false;
@@ -390,13 +390,13 @@ class CountDownController {
   /// Here optional int parameter **duration** is the updated duration for countdown timer
 
   void restart({int? duration}) {
-    if (_isReverse != null && _state != null && _state?._controller != null) {
-      _state?._controller!.duration = Duration(
-          seconds: duration ?? _state!._controller!.duration!.inSeconds);
+    if (_isReverse != null && _state != null && _state?._animationController != null) {
+      _state?._animationController!.duration = Duration(
+          seconds: duration ?? _state!._animationController!.duration!.inSeconds);
       if (_isReverse!) {
-        _state?._controller?.reverse(from: 1);
+        _state?._animationController?.reverse(from: 1);
       } else {
-        _state?._controller?.forward(from: 0);
+        _state?._animationController?.forward(from: 0);
       }
       isStarted.value = true;
       isRestarted.value = true;
@@ -407,10 +407,10 @@ class CountDownController {
 
   /// This Method resets the Countdown Timer
   void reset({int? duration}) {
-    if (_state != null && _state?._controller != null) {
-      _state?._controller!.duration = Duration(
-          seconds: duration ?? _state!._controller!.duration!.inSeconds);
-      _state?._controller?.reset();
+    if (_state != null && _state?._animationController != null) {
+      _state?._animationController!.duration = Duration(
+          seconds: duration ?? _state!._animationController!.duration!.inSeconds);
+      _state?._animationController?.reset();
       isStarted.value = _state?.widget.autoStart ?? false;
       isRestarted.value = false;
       isPaused.value = false;
@@ -422,9 +422,9 @@ class CountDownController {
   /// Time Used in terms of **Forward Countdown** and Time Left in terms of **Reverse Countdown**
 
   String? getTime() {
-    if (_state != null && _state?._controller != null) {
+    if (_state != null && _state?._animationController != null) {
       return _state?._getTime(
-          _state!._controller!.duration! * _state!._controller!.value);
+          _state!._animationController!.duration! * _state!._animationController!.value);
     }
     return "";
   }
